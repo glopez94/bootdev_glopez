@@ -1,7 +1,12 @@
 import tkinter as tk
 from tkinter import simpledialog, messagebox
+import time
+import random
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from password_checker import check_password_strength
 from tic_tac_toe import TicTacToe
+from searching_algorithms import linear_search, binary_search
 
 
 class MainApp:
@@ -26,6 +31,11 @@ class MainApp:
         )
         self.tic_tac_toe_button.pack(pady=5)
 
+        self.search_button = tk.Button(
+            self.menu_frame, text="Search Algorithms", command=self.search_algorithms
+        )
+        self.search_button.pack(pady=5)
+
         tk.Button(self.menu_frame, text="Exit", command=self.root.quit).pack(pady=5)
 
     def check_password(self):
@@ -44,13 +54,98 @@ class MainApp:
         TicTacToe(game_window)
         game_window.protocol("WM_DELETE_WINDOW", lambda: self.close_game(game_window))
 
+    def search_algorithms(self):
+        self.disable_menu()
+        search_window = tk.Toplevel(self.root)
+        search_window.title("Search Algorithms")
+
+        tk.Label(search_window, text="Choose a search algorithm:").pack()
+
+        tk.Button(
+            search_window,
+            text="Linear Search",
+            command=lambda: self.run_search_algorithm(search_window, "linear"),
+        ).pack(pady=5)
+        tk.Button(
+            search_window,
+            text="Binary Search",
+            command=lambda: self.run_search_algorithm(search_window, "binary"),
+        ).pack(pady=5)
+
+        search_window.protocol(
+            "WM_DELETE_WINDOW", lambda: self.close_search_window(search_window)
+        )
+
+    def run_search_algorithm(self, window, algorithm_type):
+        window.destroy()
+
+        data_size = 100  # Size of the dataset
+        data = random.sample(range(1, 1000), data_size)  # Generate random dataset
+        target = random.choice(data)  # Choose a random target from the dataset
+
+        if algorithm_type == "linear":
+            start_time = time.time()
+            index = linear_search(data, target)
+            end_time = time.time()
+            complexity = "O(n)"
+            algorithm_name = "Linear Search"
+
+        elif algorithm_type == "binary":
+            data.sort()  # Binary search requires sorted data
+            start_time = time.time()
+            index = binary_search(data, target)
+            end_time = time.time()
+            complexity = "O(log n)"
+            algorithm_name = "Binary Search"
+
+        search_time = end_time - start_time
+
+        result_message = f"Algorithm: {algorithm_name}\nTarget: {target}\nIndex: {index}\nTime: {search_time:.6f} seconds\nComplexity: {complexity}"
+
+        result_window = tk.Toplevel(self.root)
+        result_window.title(f"{algorithm_name} Result")
+
+        tk.Label(result_window, text=result_message).pack(pady=10)
+
+        fig, ax = plt.subplots()
+
+        if algorithm_type == "linear":
+            ax.plot(data, "bo", label="Data")
+            ax.plot(index, target, "ro", label="Target")
+
+        elif algorithm_type == "binary":
+            ax.plot(data, "bo", label="Data")
+            ax.plot(index, target, "ro", label="Target")
+
+        ax.legend()
+        plt.xlabel("Index")
+        plt.ylabel("Value")
+
+        canvas = FigureCanvasTkAgg(fig, master=result_window)
+        canvas.draw()
+        canvas.get_tk_widget().pack()
+
+        result_window.protocol(
+            "WM_DELETE_WINDOW", lambda: self.close_result_window(result_window)
+        )
+
+    def close_search_window(self, search_window):
+        search_window.destroy()
+        self.enable_menu()
+
+    def close_result_window(self, result_window):
+        result_window.destroy()
+        self.enable_menu()
+
     def disable_menu(self):
         self.password_button.config(state=tk.DISABLED)
         self.tic_tac_toe_button.config(state=tk.DISABLED)
+        self.search_button.config(state=tk.DISABLED)
 
     def enable_menu(self):
         self.password_button.config(state=tk.NORMAL)
         self.tic_tac_toe_button.config(state=tk.NORMAL)
+        self.search_button.config(state=tk.NORMAL)
 
     def close_game(self, game_window):
         game_window.destroy()
